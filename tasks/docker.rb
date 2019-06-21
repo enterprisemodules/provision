@@ -63,11 +63,12 @@ def fix_ssh(platform, container)
   end
 end
 
-def provision(docker_platform, inventory_location)
+def provision(docker_platform, image, inventory_location)
   include PuppetLitmus::InventoryManipulation
   inventory_full_path = File.join(inventory_location, 'inventory.yaml')
   inventory_hash = get_inventory_hash(inventory_full_path)
   warn '!!! Using private port forwarding!!!'
+  
   platform, version = docker_platform.split(':')
   front_facing_port = 2222
   platform = platform.sub(%r{/}, '_')
@@ -117,6 +118,7 @@ end
 
 params = JSON.parse(STDIN.read)
 platform = params['platform']
+image = rams['platform'] || platform
 action = params['action']
 node_name = params['node_name']
 inventory_location = params['inventory']
@@ -124,7 +126,7 @@ raise 'specify a node_name if tearing down' if action == 'tear_down' && node_nam
 raise 'specify a platform if provisioning' if action == 'provision' && platform.nil?
 
 begin
-  result = provision(platform, inventory_location) if action == 'provision'
+  result = provision(platform, image, inventory_location) if action == 'provision'
   result = tear_down(node_name, inventory_location) if action == 'tear_down'
   puts result.to_json
   exit 0
